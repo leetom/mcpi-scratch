@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.DEBUG)
 #logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-server_url = 'http://platform.codepku.com';
+server_url = 'http://www.codepku.com';
 
 class GetHandler(BaseHTTPRequestHandler):
 
