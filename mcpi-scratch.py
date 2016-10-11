@@ -13,6 +13,8 @@ logging.basicConfig(level=logging.DEBUG)
 #logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+server_url = 'http://platform.codepku.com';
+
 class GetHandler(BaseHTTPRequestHandler):
 
     def setBlock(self, params):
@@ -260,10 +262,10 @@ class GetHandler(BaseHTTPRequestHandler):
         self.send_response(200, "ok")
         self.send_header('Access-Control-Allow-Credentials', 'true')
         # deal with the CORS issue
-        self.send_header('Access-Control-Allow-Origin', 'http://scratchx.org')
+        self.send_header('Access-Control-Allow-Origin', server_url)
         #self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header("Access-Control-Allow-Headers", "X-Requested-With, Content-type")
+        self.send_header("Access-Control-Allow-Headers", "X-Requested-With, Content-type,X-CSRF-Token")
 
     def do_GET(self):
         global mc
@@ -293,7 +295,7 @@ class GetHandler(BaseHTTPRequestHandler):
         message = '\r\n'.join(message_parts)
         self.send_response(200)
         # deal with the CORS issue
-        self.send_header('Access-Control-Allow-Origin', 'http://scratchx.org')
+        self.send_header('Access-Control-Allow-Origin', server_url)
         self.end_headers()
         self.wfile.write(message)
         return
