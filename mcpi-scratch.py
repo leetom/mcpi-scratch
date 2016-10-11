@@ -42,7 +42,7 @@ class GetHandler(BaseHTTPRequestHandler):
         else:
             log.debug('invoking with data')
             mc.setBlocks(int(params[0]), int(params[1]), int(params[2]), int(params[3]), int(params[4]), int(params[5]), int(params[6]), int(params[7]))
-        return ''        
+        return ''
 
     def setPlayerPos(self, params): # doesn't support metadata
         log.info('invoke setPlayerPos with params: {} {} {}'.format(params[0], params[1], params[2]))
@@ -89,7 +89,7 @@ class GetHandler(BaseHTTPRequestHandler):
     # calls getLine to rasterise a line between two points, the last param is the vertical axis.
     # eg: x1,z1,x2,z2,y in minecraft coordinates
     # then plots the line using setBlock
-    def setLine(self, params): 
+    def setLine(self, params):
         log.info('invoke setLine with params: {} {} {} {} {}'.format(params[0], params[1], params[2], params[3], params[4], params[5]))
         log.debug(params)
         x1 = int(params[0])
@@ -124,13 +124,13 @@ class GetHandler(BaseHTTPRequestHandler):
         points.append((x0 - radius, y0))
 
         while x < y:
-            if f >= 0: 
+            if f >= 0:
                 y -= 1
                 ddf_y += 2
                 f += ddf_y
             x += 1
             ddf_x += 2
-            f += ddf_x    
+            f += ddf_x
             points.append((x0 + x, y0 + y))
             points.append((x0 - x, y0 + y))
             points.append((x0 + x, y0 - y))
@@ -144,7 +144,7 @@ class GetHandler(BaseHTTPRequestHandler):
 
     # builds a circle using Bresenham's circle algorithm (also known as a midpoint circle algorithm)
     # plots using setBlock
-    def setCircle(self, params): 
+    def setCircle(self, params):
         log.info('invoke setCircle with params: {} {} {} {} {}'.format(params[0], params[1], params[2], params[3], params[4]))
         log.debug(params)
         x1 = int(params[0])
@@ -206,7 +206,7 @@ class GetHandler(BaseHTTPRequestHandler):
         return str(coordVal)
 
     # getBlock calls getBlockWithData function
-    # currently only returns the id and not the data 
+    # currently only returns the id and not the data
     # TODO: refactor to return data also
     def getBlock(self, params):
         log.info ('getBlock: {0}'.format(params))
@@ -224,7 +224,7 @@ class GetHandler(BaseHTTPRequestHandler):
 
     # pollBlockHits calls pollBlockHits function
     # currently only returns the first block in the period between polls
-    # requires that polling is enabled to check  
+    # requires that polling is enabled to check
     # TODO: refactor to return multiple blocks
     def pollBlockHits(self, params):
         log.info ('pollBlockHits: {0}'.format(params))
@@ -251,10 +251,10 @@ class GetHandler(BaseHTTPRequestHandler):
         # - so round the players position
         # - the Vec3 object is part of the minecraft class library
         playerPos = minecraft.Vec3(int(playerPos.x), int(playerPos.y), int(playerPos.z))
-        # posStr = ("playerPos/x {0}\r\nplayerPos/y {1}\r\nplayerPos/z {2}".format(str(playerPos.x), str(playerPos.y), str(playerPos.z)))
+        posStr = ("playerPos/x {0}\r\nplayerPos/y {1}\r\nplayerPos/z {2}".format(str(playerPos.x), str(playerPos.y), str(playerPos.z)))
         # posStr = ("{0}".format(str(playerPos.x)))
         log.debug(playerPos)
-        return playerPos.x
+        return posStr
 
     def do_OPTIONS(self):
         self.send_response(200, "ok")
@@ -264,7 +264,7 @@ class GetHandler(BaseHTTPRequestHandler):
         #self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header("Access-Control-Allow-Headers", "X-Requested-With, Content-type")
-    
+
     def do_GET(self):
         global mc
         cmds = {
@@ -287,7 +287,7 @@ class GetHandler(BaseHTTPRequestHandler):
         message_parts.append('')
         cmdpath = parsed_path[2].split('/')
         handler = cmds[cmdpath[1]]
-        pollResp = handler(cmdpath[2:])
+        pollResp = str(handler(cmdpath[2:]))
         log.debug ("pollResp: {0}".format(pollResp))
         message_parts.append(pollResp)
         message = '\r\n'.join(message_parts)
