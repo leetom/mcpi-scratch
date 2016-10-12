@@ -3,6 +3,9 @@
     var blockHits = false;
 
     ext.postToChat = function(str) {
+        console.log(str);
+        console.log(document.cookie);
+        console.log($('.user-name').text());
         var cmdUrl = "http://localhost:4715/postToChat/" + encodeURIComponent(str);
         $.ajax({
             type: "GET",

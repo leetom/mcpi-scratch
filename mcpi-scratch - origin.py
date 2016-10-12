@@ -1,4 +1,3 @@
-#-*- coding: utf-8 -*-
 # simple httpserver to act as a Scratch2 helper app
 # adapted from : http://pymotw.com/2/BaseHTTPServer/
 # add python minecraft examples from http://www.stuffaboutcode.com/
@@ -7,7 +6,6 @@ import argparse, urllib
 from BaseHTTPServer import BaseHTTPRequestHandler
 import urlparse
 import mcpi.minecraft as minecraft
-from mcpi.codecraft import Codecraft
 import mcpi.block as block
 import logging
 
@@ -19,7 +17,7 @@ server_url = 'http://www.codepku.com';
 
 class GetHandler(BaseHTTPRequestHandler):
 
-    def setBlock(self, params, mc = None):
+    def setBlock(self, params):
         print ('setblock: {0}'.format(params))
         x = int(params[0])
         y = int(params[1])
@@ -38,7 +36,7 @@ class GetHandler(BaseHTTPRequestHandler):
             mc.setBlock(x, y, z, blockType, blockData)
         return ''
 
-    def setBlocks(self, params, mc = None): # doesn't support metadata
+    def setBlocks(self, params): # doesn't support metadata
         log.info('invoke setBlocks with params: {} {} {} {} {} {} {} {}'.format(params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7]))
         if (int(params[7]) == -1): # sure these is a more pythonesque way of doing this
             log.debug('invoking without data')
@@ -48,7 +46,7 @@ class GetHandler(BaseHTTPRequestHandler):
             mc.setBlocks(int(params[0]), int(params[1]), int(params[2]), int(params[3]), int(params[4]), int(params[5]), int(params[6]), int(params[7]))
         return ''
 
-    def setPlayerPos(self, params, mc = None): # doesn't support metadata
+    def setPlayerPos(self, params): # doesn't support metadata
         log.info('invoke setPlayerPos with params: {} {} {}'.format(params[0], params[1], params[2]))
         mc.player.setPos(int(params[0]), int(params[1]), int(params[2]))
         return ''
@@ -56,7 +54,7 @@ class GetHandler(BaseHTTPRequestHandler):
     # implementation of Bresenham's Line Algorithm to rasterise the points in a line between two endpoints
     # algorithm taken from: http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm#Python
     # note: y refers to usual cartesian x,y coords. Not the minecraft coords where y is the veritical axis
-    def getLinePoints(self, x1, y1, x2, y2, mc = None):
+    def getLinePoints(self, x1, y1, x2, y2):
         points = []
         issteep = abs(y2-y1) > abs(x2-x1)
         if issteep:
@@ -93,7 +91,7 @@ class GetHandler(BaseHTTPRequestHandler):
     # calls getLine to rasterise a line between two points, the last param is the vertical axis.
     # eg: x1,z1,x2,z2,y in minecraft coordinates
     # then plots the line using setBlock
-    def setLine(self, params, mc = None):
+    def setLine(self, params):
         log.info('invoke setLine with params: {} {} {} {} {}'.format(params[0], params[1], params[2], params[3], params[4], params[5]))
         log.debug(params)
         x1 = int(params[0])
@@ -103,16 +101,16 @@ class GetHandler(BaseHTTPRequestHandler):
         y = int(params[4])
         blockType = int(params[5])
         blockData = int(params[6])
-        points = self.getLinePoints(x1, z1, x2, z2, mc)
+        points = self.getLinePoints(x1, z1, x2, z2)
         log.debug(points)
         for p in points:
-            self.setBlock([p[0], y, p[1], blockType, blockData, ''], mc)
+            self.setBlock([p[0], y, p[1], blockType, blockData, ''])
         return ''
 
     # plots a circles point coords using Bresenham's circle algorithm (also known as a midpoint circle algorithm)
     # based on code from http://rosettacode.org/wiki/Bitmap/Midpoint_circle_algorithm#Python
     # note: y refers to usual cartesian x,y coords. Not the minecraft coords where y is the veritical axis
-    def getCirclePoints(self, x0, y0, radius, mc = None):
+    def getCirclePoints(self, x0, y0, radius):
         log.debug('getCirclePoints with: {} {} {}'.format(x0, y0, radius))
         points = []
         x = 0
@@ -148,7 +146,7 @@ class GetHandler(BaseHTTPRequestHandler):
 
     # builds a circle using Bresenham's circle algorithm (also known as a midpoint circle algorithm)
     # plots using setBlock
-    def setCircle(self, params, mc = None):
+    def setCircle(self, params):
         log.info('invoke setCircle with params: {} {} {} {} {}'.format(params[0], params[1], params[2], params[3], params[4]))
         log.debug(params)
         x1 = int(params[0])
@@ -157,18 +155,18 @@ class GetHandler(BaseHTTPRequestHandler):
         y = int(params[3])
         blockType = int(params[4])
         blockData = int(params[5])
-        points = self.getCirclePoints(x1, z1, r, mc)
+        points = self.getCirclePoints(x1, z1, r)
         log.debug(points)
         for p in points:
-            self.setBlock([p[0], y, p[1], blockType, blockData, ''], mc)
+            self.setBlock([p[0], y, p[1], blockType, blockData, ''])
         return ''
 
-    def postToChat(self, params, mc = None):
+    def postToChat(self, params):
         log.info('post to chat: %s', urllib.unquote(params[0]))
         mc.postToChat(urllib.unquote(params[0]))
         return ''
 
-    def playerPosToChat(self, params, mc = None):
+    def playerPosToChat(self, params):
         log.info('playerPos to chat')
         playerPos = mc.player.getTilePos()
         log.debug(playerPos)
@@ -188,7 +186,7 @@ class GetHandler(BaseHTTPRequestHandler):
         log.info('trying to reset')
         return ''
 
-    def getPlayerPos(self, params, mc = None): # doesn't support metadata
+    def getPlayerPos(self, params): # doesn't support metadata
         log.info('invoke getPlayerPos: {}'.format(params[0]))
         playerPos = mc.player.getPos()
         #Using your players position
@@ -212,7 +210,7 @@ class GetHandler(BaseHTTPRequestHandler):
     # getBlock calls getBlockWithData function
     # currently only returns the id and not the data
     # TODO: refactor to return data also
-    def getBlock(self, params, mc = None):
+    def getBlock(self, params):
         log.info ('getBlock: {0}'.format(params))
         x = int(params[0])
         y = int(params[1])
@@ -230,7 +228,7 @@ class GetHandler(BaseHTTPRequestHandler):
     # currently only returns the first block in the period between polls
     # requires that polling is enabled to check
     # TODO: refactor to return multiple blocks
-    def pollBlockHits(self, params, mc = None):
+    def pollBlockHits(self, params):
         log.info ('pollBlockHits: {0}'.format(params))
         blockHits = mc.events.pollBlockHits()
         log.info ('blockHits: %s', blockHits)
@@ -238,9 +236,9 @@ class GetHandler(BaseHTTPRequestHandler):
             return str(1)
         return str(0)
 
-    # from original version for scratch2 (offline)
+    # from original version for scratch2
     # currently unused
-    def pollEvents(self, params, mc = None):
+    def pollEvents(self, params):
         global pollInc, pollLimit, prevPosStr
         pollInc += 1
         log.debug('poll: {} {}'.format(pollInc, prevPosStr))
@@ -260,10 +258,6 @@ class GetHandler(BaseHTTPRequestHandler):
         log.debug(playerPos)
         return posStr
 
-    def checkReady(self, params, mc = None):
-        #判断用户是否已经加入MC服务器
-        return "true"
-
     def do_OPTIONS(self):
         self.send_response(200, "ok")
         self.send_header('Access-Control-Allow-Credentials', 'true')
@@ -275,9 +269,6 @@ class GetHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         global mc
-        global mc_list
-        global mc_host
-        global mc_port
         cmds = {
             "poll" : self.pollEvents,
             "postToChat" : self.postToChat,
@@ -292,28 +283,13 @@ class GetHandler(BaseHTTPRequestHandler):
             "getPlayerPos" : self.getPlayerPos,
             "getBlock" : self.getBlock,
             "pollBlockHit" : self.pollBlockHits,
-            "checkReady": self.checkReady,
         }
         parsed_path = urlparse.urlparse(self.path)
         message_parts = []
         message_parts.append('')
         cmdpath = parsed_path[2].split('/')
-        username = cmdpath[1]
-        handler = cmds[cmdpath[2]]
-        #查找该用户的mc对象
-        if (username in mc_list):
-            mc_temp = mc_list[username]
-        else:
-            #log.debug("config: {}, {}, {}".format(mc_host, mc_port, username))
-            try:
-                mc_temp = Codecraft(mc_host, mc_port, username)
-            except:
-                log.error("User has not join mc server:" + username)
-                return 
-            mc_list[username] = mc_temp
-
-        log.debug("mc_list: {}".format(mc_list))
-        pollResp = str(handler(cmdpath[3:], mc_temp))
+        handler = cmds[cmdpath[1]]
+        pollResp = str(handler(cmdpath[2:]))
         log.debug ("pollResp: {0}".format(pollResp))
         message_parts.append(pollResp)
         message = '\r\n'.join(message_parts)
@@ -341,15 +317,9 @@ if __name__ == '__main__':
     pollLimit = 15
     prevPosStr = ""
 
-    mc_list = {}    # list of mc object for each user, indexed by username
-
-    mc_host = 'localhost'
-    mc_port = 4711
-
     try:
         if args.host:
-            mc_host = args.host
-            mc = minecraft.Minecraft.create(mc_host) #仅仅测试服务器是否启动。
+            mc = minecraft.Minecraft.create(args.host)
         else:
             mc = minecraft.Minecraft.create()
     except:
