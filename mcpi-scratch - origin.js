@@ -1,38 +1,12 @@
 (function (ext) {
 
-    var ext_url = "http://www.codepku.com/scratch/ext/mcpi-scratch.js";
-
     var blockHits = false;
-    var server_host = "http://localhost";
-    var server_port = 4715;
-
-
-    var server_url = server_host + ":" + server_port;
-
-    var READY = false;
-
-    ext.checkReady = function(){
-        return READY;
-    }
-
-    ext.userName = function(){
-        if($('.user-name')){
-            return $('.user-name a').text().trim();
-        }else{
-            return '';
-        }
-    }
-
-    if(ext.userName()){
-        server_url += "/" + ext.userName(); //用户名作为参数传递
-    }
 
     ext.postToChat = function(str) {
-        if(!ext.checkReady()) return;
         console.log(str);
         console.log(document.cookie);
         console.log($('.user-name').text());
-        var cmdUrl = server_url + "/postToChat/" + encodeURIComponent(str);
+        var cmdUrl = "http://localhost:4715/postToChat/" + encodeURIComponent(str);
         $.ajax({
             type: "GET",
             url: cmdUrl,
@@ -47,8 +21,7 @@
     };
 
     ext.playerPosToChat = function() {
-        if(!ext.checkReady()) return;
-        var cmdUrl = server_url + "/playerPosToChat";
+        var cmdUrl = "http://localhost:4715/playerPosToChat";
         $.ajax({
             type: "GET",
             url: cmdUrl,
@@ -63,8 +36,7 @@
     };
 
     ext.setPlayerPos = function(x, y, z) {
-        if(!ext.checkReady()) return;
-        var cmdUrl = server_url + "/setPlayerPos/" + x + "/" + y + "/" + z;
+        var cmdUrl = "http://localhost:4715/setPlayerPos/" + x + "/" + y + "/" + z;
         $.ajax({
             type: "GET",
             url: cmdUrl,
@@ -79,8 +51,7 @@
     };
 
     ext.setBlock = function(x, y, z, blockType, blockData, posType) {
-        if(!ext.checkReady()) return;
-        var cmdUrl = server_url + "/setBlock/" + x + "/" + y + "/" + z + "/" + blockType + "/" + blockData + "/" + posType;
+        var cmdUrl = "http://localhost:4715/setBlock/" + x + "/" + y + "/" + z + "/" + blockType + "/" + blockData + "/" + posType;
         $.ajax({
             type: "GET",
             url: cmdUrl,
@@ -95,8 +66,7 @@
     };
 
     ext.setBlocks = function(x1, y1, z1, x2, y2, z2, blockType, blockData) {
-        if(!ext.checkReady()) return;
-        var cmdUrl = server_url + "/setBlocks/" + x1 + "/" + y1 + "/" + z1 + "/" 
+        var cmdUrl = "http://localhost:4715/setBlocks/" + x1 + "/" + y1 + "/" + z1 + "/" 
             + x2 + "/" + y2 + "/" + z2 + "/" + blockType + "/" + blockData;
         $.ajax({
             type: "GET",
@@ -112,8 +82,7 @@
     };
 
     ext.setLine = function(x1, z1, x2, z2, y, blockType, blockData) {
-        if(!ext.checkReady()) return;
-        var cmdUrl = server_url + "/setLine/" + x1 + "/" + z1 + "/" 
+        var cmdUrl = "http://localhost:4715/setLine/" + x1 + "/" + z1 + "/" 
             + x2 + "/" + z2 + "/" + y + "/" + blockType + "/" + blockData;
         $.ajax({
             type: "GET",
@@ -129,8 +98,7 @@
     };
 
     ext.setCircle = function(x, z, r, y, blockType, blockData) {
-        if(!ext.checkReady()) return;
-        var cmdUrl = server_url + "/setCircle/" + x + "/" + z + "/" 
+        var cmdUrl = "http://localhost:4715/setCircle/" + x + "/" + z + "/" 
             + r + "/" + y + "/" + blockType + "/" + blockData;
         $.ajax({
             type: "GET",
@@ -147,8 +115,7 @@
 
     // get one coord (x, y, or z) for playerPos
     ext.getPlayerPos = function(posCoord, callback) {
-        if(!ext.checkReady()) return;
-        var cmdUrl = server_url + "/getPlayerPos/" + posCoord;
+        var cmdUrl = "http://localhost:4715/getPlayerPos/" + posCoord;
         $.ajax({
             type: "GET",
             url: cmdUrl,
@@ -166,8 +133,7 @@
 
     // get one coord (x, y, or z) for playerPos
     ext.getBlock = function(x, y, z, posType, callback) {
-        if(!ext.checkReady()) return;
-        var cmdUrl = server_url + "/getBlock/" + x + "/" + y + "/" + z + "/" + posType;
+        var cmdUrl = "http://localhost:4715/getBlock/" + x + "/" + y + "/" + z + "/" + posType;
         $.ajax({
             type: "GET",
             url: cmdUrl,
@@ -184,8 +150,7 @@
     };
 
     function checkMC_Events() {
-        if(!ext.checkReady()) return;
-        var cmdUrl = server_url + "/pollBlockHit/";
+        var cmdUrl = "http://localhost:4715/pollBlockHit/";
         $.ajax({
             type: "GET",
             url: cmdUrl,
@@ -205,7 +170,6 @@
     };
 
     ext.whenBlockHit = function(str) {
-        if(!ext.checkReady()) return;
         if (!blockHits)
             return;
         else
@@ -213,42 +177,8 @@
     };
 
 
-    ext._status = {
-        success: {status: 2, msg:'Ready' },
-        waiting: {status: 1, msg: '请加入MC服务器'},
-        need_login: {status: 0, msg: '登录之后才能使用'},
-    };
     ext._getStatus = function() {
-        console.log('_getStatus');
-        if(ext.userName() == ''){
-            return ext._status.need_login;
-        }
-        if(ext.checkReady()) return ext._status.success;
-        var cmdUrl = server_url + "/checkReady/";
-        var returnData = '';
-        $.ajax({
-            type: "GET",
-            url: cmdUrl,
-            async: false,   //
-            //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
-            success: function(data) {
-                console.log("mc server ready " + data);
-                returnData = data.trim();
-            },
-            error: function(jqxhr, textStatus, error) { // have to change this coz jasonp parse error
-                console.log("mc server failed ", error);
-            },
-        }); 
-        if(returnData == 'true'){
-            console.log("ready");
-            READY = true;
-            return ext._status.success;
-        }else{
-            console.log("not ready");
-            READY = false;
-            return ext._status.waiting;    // 0 -> error(红色), 1 -> waiting(黄色), 2 -> success(绿色)
-        }
-
+        return { status:2, msg:'Ready' };
     };
 
     ext._shutdown = function() {
