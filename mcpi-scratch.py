@@ -260,9 +260,27 @@ class GetHandler(BaseHTTPRequestHandler):
         log.debug(playerPos)
         return posStr
 
-    def checkReady(self, params, mc = None):
+    def checkReady(self, username):
         #判断用户是否已经加入MC服务器
-        return "true"
+        #查找该用户的mc对象
+        global mc_host, mc_port, mc_list
+        if (username in mc_list):
+            try:
+                #用户是否还在游戏中。
+                mc_list[username].getPlayerEntityId(username)
+                return "true"
+            except:
+                del mc_list[username]
+                return "false"
+        else:
+            #log.debug("config: {}, {}, {}".format(mc_host, mc_port, username))
+            try:
+                mc_temp = Codecraft(mc_host, mc_port, username)
+                mc_list[username] = mc_temp
+                return "true"
+            except:
+                log.error("User has not join mc server:" + username)
+                return "false"
 
     def do_OPTIONS(self):
         self.send_response(200, "ok")
@@ -298,25 +316,17 @@ class GetHandler(BaseHTTPRequestHandler):
         message_parts = []
         message_parts.append('')
         cmdpath = parsed_path[2].split('/')
-        username = cmdpath[1]
-        handler = cmds[cmdpath[2]]
-        #查找该用户的mc对象
-        if (username in mc_list):
-            mc_temp = mc_list[username]
+        username = urlparse.unquote(cmdpath[1])
+        if(cmdpath[2] == 'checkReady'):
+            message = self.checkReady(username)
         else:
-            #log.debug("config: {}, {}, {}".format(mc_host, mc_port, username))
-            try:
-                mc_temp = Codecraft(mc_host, mc_port, username)
-            except:
-                log.error("User has not join mc server:" + username)
-                return 
-            mc_list[username] = mc_temp
-
-        log.debug("mc_list: {}".format(mc_list))
-        pollResp = str(handler(cmdpath[3:], mc_temp))
-        log.debug ("pollResp: {0}".format(pollResp))
-        message_parts.append(pollResp)
-        message = '\r\n'.join(message_parts)
+            mc_temp = mc_list[username]
+            handler = cmds[cmdpath[2]]
+            log.debug("mc_list: {}".format(mc_list))
+            pollResp = str(handler(cmdpath[3:], mc_temp))
+            log.debug ("pollResp: {0}".format(pollResp))
+            message_parts.append(pollResp)
+            message = '\r\n'.join(message_parts)
         self.send_response(200)
         # deal with the CORS issue
         self.send_header('Access-Control-Allow-Origin', server_url)

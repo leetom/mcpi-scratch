@@ -3,7 +3,7 @@
     var ext_url = "http://www.codepku.com/scratch/ext/mcpi-scratch.js";
 
     var blockHits = false;
-    var server_host = "http://localhost";
+    var server_host = "http://www.codepku.com";
     var server_port = 4715;
 
 
@@ -217,13 +217,18 @@
         success: {status: 2, msg:'Ready' },
         waiting: {status: 1, msg: '请加入MC服务器'},
         need_login: {status: 0, msg: '登录之后才能使用'},
+        last_ready_time: (new Date).getTime(),  //上次确认ready的时间（毫秒）
+        last_check_time: (new Date).getTime(),  //上次到服务器上查询的时间（限制2秒一次）
     };
     ext._getStatus = function() {
         console.log('_getStatus');
         if(ext.userName() == ''){
             return ext._status.need_login;
         }
-        if(ext.checkReady()) return ext._status.success;
+        if(ext.checkReady() && (new Date).getTime() - ext._status.last_ready_time < 5000) 
+            return ext._status.success;
+        if((new Date).getTime() - ext._status.last_check_time < 2000 )
+            return ext._status.waiting;
         var cmdUrl = server_url + "/checkReady/";
         var returnData = '';
         $.ajax({
@@ -232,16 +237,18 @@
             async: false,   //
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
             success: function(data) {
-                console.log("mc server ready " + data);
+                console.log("mc server ready " + data.trim());
                 returnData = data.trim();
             },
             error: function(jqxhr, textStatus, error) { // have to change this coz jasonp parse error
                 console.log("mc server failed ", error);
             },
         }); 
+        ext._status.last_check_time = (new Date).getTime();
         if(returnData == 'true'){
             console.log("ready");
             READY = true;
+            ext._status.last_ready_time = (new Date).getTime();
             return ext._status.success;
         }else{
             console.log("not ready");
@@ -279,7 +286,7 @@
     };
 
     // Register the extension
-    ScratchExtensions.register('MCPI-Scratch', descriptor, ext);
+    ScratchExtensions.register('编玩Craft-Scratch', descriptor, ext);
 
     checkMC_Events();
     var poller = setInterval(checkMC_Events, 2000);
