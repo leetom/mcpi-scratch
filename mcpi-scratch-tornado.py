@@ -14,6 +14,11 @@ import logging
 from SocketServer import ThreadingMixIn  
 import threading  
 
+import tornado.httpserver
+import tornado.ioloop
+import tornado.options
+import tornado.web
+
 
 logging.basicConfig(level=logging.DEBUG)
 #logging.basicConfig(level=logging.INFO)
@@ -341,6 +346,10 @@ class GetHandler(BaseHTTPRequestHandler):
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):  
     """Handle requests in a separate thread."""  
 
+class IndexHandler(tornado.web.RequestHandler):
+    def get(self):
+        greeting = self.get_argument('greeting', 'Hello')
+        self.write(greeting + ', friendly user!\n')
 
 if __name__ == '__main__':
 
@@ -377,7 +386,17 @@ if __name__ == '__main__':
         sys.exit(0)
 
     #server = HTTPServer(('localhost', 4715), GetHandler)
-    server = ThreadedHTTPServer(('localhost', 4715), GetHandler)  
-    log.info('Starting server, use <Ctrl-C> to stop')
-    server.serve_forever()
-    server.timeout = 0.5;
+    #server = ThreadedHTTPServer(('localhost', 4715), GetHandler)  
+    #log.info('Starting server, use <Ctrl-C> to stop')
+    #server.serve_forever()
+
+    app = tornado.web.Application(handlers=[(r"/", IndexHandler)])
+    http_server = tornado.httpserver.HTTPServer(app)
+    http_server.listen(4715)
+
+    # create BaseHTTPServer
+    server = ThreadedHTTPServer(('localhost', 8080), GetHandler)
+    server.timeout = 0.01 
+
+    tornado.ioloop.PeriodicCallback(server.handle_request, 100).start() # every 100 milliseconds
+    tornado.ioloop.IOLoop.instance().start()
