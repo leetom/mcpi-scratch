@@ -361,10 +361,10 @@ def do_options(path):
     self.send_header("Access-Control-Allow-Headers", "X-Requested-With, Content-type,X-CSRF-Token")
 
 
+mc_list = {}    # list of mc object for each user, indexed by username
+mc_host = 'localhost'
+mc_port = 4711
 
 if __name__ == '__main__':
-    mc_list = {}    # list of mc object for each user, indexed by username
-    mc_host = 'localhost'
-    mc_port = 4711
     # app.debug = True
     app.run()
