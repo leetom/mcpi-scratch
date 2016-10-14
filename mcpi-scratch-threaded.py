@@ -324,13 +324,16 @@ class GetHandler(BaseHTTPRequestHandler):
         if(cmdpath[2] == 'checkReady'):
             message = self.checkReady(username)
         else:
-            mc_temp = mc_list[username]
-            handler = cmds[cmdpath[2]]
-            log.debug("mc_list: {}".format(mc_list))
-            pollResp = str(handler(cmdpath[3:], mc_temp))
-            log.debug ("pollResp: {0}".format(pollResp))
-            message_parts.append(pollResp)
-            message = '\r\n'.join(message_parts)
+            if(username in mc_list):
+                mc_temp = mc_list[username]
+                handler = cmds[cmdpath[2]]
+                log.debug("mc_list: {}".format(mc_list))
+                pollResp = str(handler(cmdpath[3:], mc_temp))
+                log.debug ("pollResp: {0}".format(pollResp))
+                message_parts.append(pollResp)
+                message = '\r\n'.join(message_parts)
+            else:
+                message = 'error'
         self.send_response(200)
         # deal with the CORS issue
         self.send_header('Access-Control-Allow-Origin', server_url)
