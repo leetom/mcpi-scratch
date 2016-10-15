@@ -352,19 +352,19 @@ def after_request(response):
 
 @app.route('/<path:path>', methods = ['OPTIONS'])
 def do_options(path):
-    self.send_response(200, "ok")
-    self.send_header('Access-Control-Allow-Credentials', 'true')
+    resp = flask.Response()
+    resp.headers['Access-Control-Allow-Origin'] = server_url
+    resp.headers['Access-Control-Allow-Credentials'] = 'true'
     # deal with the CORS issue
-    self.send_header('Access-Control-Allow-Origin', server_url)
     #self.send_header('Access-Control-Allow-Origin', '*')
-    self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    self.send_header("Access-Control-Allow-Headers", "X-Requested-With, Content-type,X-CSRF-Token")
-
+    resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    resp.headers["Access-Control-Allow-Headers"] = "X-Requested-With, Content-type,X-CSRF-Token"
+    return resp
 
 mc_list = {}    # list of mc object for each user, indexed by username
-mc_host = 'localhost'
+mc_host = '10.2.1.136'
 mc_port = 4711
 
 if __name__ == '__main__':
-    # app.debug = True
+    app.debug = True
     app.run()
