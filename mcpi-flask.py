@@ -358,7 +358,7 @@ def do_options(path):
     # deal with the CORS issue
     #self.send_header('Access-Control-Allow-Origin', '*')
     resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    resp.headers["Access-Control-Allow-Headers"] = "X-Requested-With, Content-type,X-CSRF-Token"
+    resp.headers["Access-Control-Allow-Headers"] = "X-Requested-With, Content-type, X-CSRF-Token"
     return resp
 
 mc_list = {}    # list of mc object for each user, indexed by username
