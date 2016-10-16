@@ -1,29 +1,29 @@
-#-*- coding:utf-8 -*-
-from flask import Flask
-from flask import request
-from flask import Response
+#-*- coding: utf-8 -*-
+# simple httpserver to act as a Scratch2 helper app
+# adapted from : http://pymotw.com/2/BaseHTTPServer/
+# add python minecraft examples from http://www.stuffaboutcode.com/
+import sys, traceback
+import argparse, urllib
+from BaseHTTPServer import BaseHTTPRequestHandler
+from BaseHTTPServer import HTTPServer
+import urlparse
 import mcpi.minecraft as minecraft
 from mcpi.codecraft import Codecraft
 import mcpi.block as block
-import urlparse, urllib
 import logging
+from SocketServer import ThreadingMixIn  
+import threading  
+import time
+
 
 logging.basicConfig(level=logging.DEBUG)
 #logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-app = Flask(__name__)
+server_url = 'http://www.codepku.com';
 
-server_url = 'http://www.codepku.com'
+class GetHandler(BaseHTTPRequestHandler):
 
-class Handler:
-    def __init__(self, mc):
-        self.mc = mc
-
-    def __call__(self):
-        pass
-
-    @classmethod #类方法
     def setBlock(self, params, mc = None):
         print ('setblock: {0}'.format(params))
         x = int(params[0])
@@ -43,7 +43,6 @@ class Handler:
             mc.setBlock(x, y, z, blockType, blockData)
         return ''
 
-    @classmethod #类方法
     def setBlocks(self, params, mc = None): # doesn't support metadata
         log.info('invoke setBlocks with params: {} {} {} {} {} {} {} {}'.format(params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7]))
         if (int(params[7]) == -1): # sure these is a more pythonesque way of doing this
@@ -54,7 +53,6 @@ class Handler:
             mc.setBlocks(int(params[0]), int(params[1]), int(params[2]), int(params[3]), int(params[4]), int(params[5]), int(params[6]), int(params[7]))
         return ''
 
-    @classmethod #类方法
     def setPlayerPos(self, params, mc = None): # doesn't support metadata
         log.info('invoke setPlayerPos with params: {} {} {}'.format(params[0], params[1], params[2]))
         mc.player.setPos(int(params[0]), int(params[1]), int(params[2]))
@@ -63,7 +61,6 @@ class Handler:
     # implementation of Bresenham's Line Algorithm to rasterise the points in a line between two endpoints
     # algorithm taken from: http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm#Python
     # note: y refers to usual cartesian x,y coords. Not the minecraft coords where y is the veritical axis
-    @classmethod #类方法
     def getLinePoints(self, x1, y1, x2, y2, mc = None):
         points = []
         issteep = abs(y2-y1) > abs(x2-x1)
@@ -101,7 +98,6 @@ class Handler:
     # calls getLine to rasterise a line between two points, the last param is the vertical axis.
     # eg: x1,z1,x2,z2,y in minecraft coordinates
     # then plots the line using setBlock
-    @classmethod #类方法
     def setLine(self, params, mc = None):
         log.info('invoke setLine with params: {} {} {} {} {}'.format(params[0], params[1], params[2], params[3], params[4], params[5]))
         log.debug(params)
@@ -121,7 +117,6 @@ class Handler:
     # plots a circles point coords using Bresenham's circle algorithm (also known as a midpoint circle algorithm)
     # based on code from http://rosettacode.org/wiki/Bitmap/Midpoint_circle_algorithm#Python
     # note: y refers to usual cartesian x,y coords. Not the minecraft coords where y is the veritical axis
-    @classmethod #类方法
     def getCirclePoints(self, x0, y0, radius, mc = None):
         log.debug('getCirclePoints with: {} {} {}'.format(x0, y0, radius))
         points = []
@@ -158,7 +153,6 @@ class Handler:
 
     # builds a circle using Bresenham's circle algorithm (also known as a midpoint circle algorithm)
     # plots using setBlock
-    @classmethod #类方法
     def setCircle(self, params, mc = None):
         log.info('invoke setCircle with params: {} {} {} {} {}'.format(params[0], params[1], params[2], params[3], params[4]))
         log.debug(params)
@@ -174,13 +168,11 @@ class Handler:
             self.setBlock([p[0], y, p[1], blockType, blockData, ''], mc)
         return ''
 
-    @classmethod #类方法
     def postToChat(self, params, mc = None):
         log.info('post to chat: %s', urllib.unquote(params[0]))
         mc.postToChat(urllib.unquote(params[0]))
         return ''
 
-    @classmethod #类方法
     def playerPosToChat(self, params, mc = None):
         log.info('playerPos to chat')
         playerPos = mc.player.getTilePos()
@@ -192,18 +184,15 @@ class Handler:
         mc.postToChat(urllib.unquote(posStr))
         return ''
 
-    @classmethod #类方法
     def cross_domain(self, params):
         # not needed for offline editor, only online webeditor
         log.info('need to return cross_domain.xml') # needed for scratch Flash issues
         return ''
 
-    @classmethod #类方法
     def reset_all(self, params):
         log.info('trying to reset')
         return ''
 
-    @classmethod #类方法
     def getPlayerPos(self, params, mc = None): # doesn't support metadata
         log.info('invoke getPlayerPos: {}'.format(params[0]))
         playerPos = mc.player.getPos()
@@ -276,8 +265,7 @@ class Handler:
         log.debug(playerPos)
         return posStr
 
-    @staticmethod  
-    def checkReady(username):
+    def checkReady(self, username):
         #判断用户是否已经加入MC服务器
         #查找该用户的mc对象
         global mc_host, mc_port, mc_list
@@ -296,72 +284,101 @@ class Handler:
                 mc_list[username] = mc_temp
                 return "true"
             except:
-                log.error(mc_host + str(mc_port))
-                log.error('all users: {}'.format(mc_list))
                 log.error("User has not join mc server:" + username)
                 return "false"
 
+    def do_OPTIONS(self):
+        self.send_response(200, "ok")
+        self.send_header('Access-Control-Allow-Credentials', 'true')
+        # deal with the CORS issue
+        self.send_header('Access-Control-Allow-Origin', server_url)
+        #self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header("Access-Control-Allow-Headers", "X-Requested-With, Content-type,X-CSRF-Token")
 
-cmds = {
-    "poll" : Handler.pollEvents,
-    "postToChat" : Handler.postToChat,
-    "setBlock" : Handler.setBlock,
-    "setBlocks" : Handler.setBlocks,
-    "setPlayerPos" : Handler.setPlayerPos,
-    "playerPosToChat" : Handler.playerPosToChat,
-    "setLine" : Handler.setLine,
-    "setCircle" : Handler.setCircle,
-    "cross_domain.xml" : Handler.cross_domain,
-    "reset_all" : Handler.reset_all,
-    "getPlayerPos" : Handler.getPlayerPos,
-    "getBlock" : Handler.getBlock,
-    "pollBlockHit" : Handler.pollBlockHits,
-    "checkReady": Handler.checkReady,
-}
-
-@app.route('/')
-def index():
-    return "hello CodeCraft!\n"
-
-@app.route('/<path:path>', methods=['GET'])
-def catch_all(path):
-    cmdpath = path.split('/')
-    username = urlparse.unquote(cmdpath[0])
-    global mc
-    global mc_list
-    global mc_host
-    global mc_port
-    global cmds
-    if(cmdpath[1] == 'checkReady'):
-        return Handler.checkReady(username)
-    else:
-        if(username in mc_list):      
-            mc_temp = mc_list[username]
-            handler = cmds[cmdpath[1]]
-            pollResp = str(handler(cmdpath[2:], mc_temp))
-            return pollResp
+    def do_GET(self):
+        global mc
+        global mc_list
+        global mc_host
+        global mc_port
+        cmds = {
+            "poll" : self.pollEvents,
+            "postToChat" : self.postToChat,
+            "setBlock" : self.setBlock,
+            "setBlocks" : self.setBlocks,
+            "setPlayerPos" : self.setPlayerPos,
+            "playerPosToChat" : self.playerPosToChat,
+            "setLine" : self.setLine,
+            "setCircle" : self.setCircle,
+            "cross_domain.xml" : self.cross_domain,
+            "reset_all" : self.reset_all,
+            "getPlayerPos" : self.getPlayerPos,
+            "getBlock" : self.getBlock,
+            "pollBlockHit" : self.pollBlockHits,
+            "checkReady": self.checkReady,
+        }
+        parsed_path = urlparse.urlparse(self.path)
+        message_parts = []
+        message_parts.append('')
+        cmdpath = parsed_path[2].split('/')
+        username = urlparse.unquote(cmdpath[1])
+        if(cmdpath[2] == 'checkReady'):
+            message = self.checkReady(username)
         else:
-            return "fail"
-    return 'You want path: {}'.format(cmdpath)
+            mc_temp = mc_list[username]
+            handler = cmds[cmdpath[2]]
+            log.debug("mc_list: {}".format(mc_list))
+            pollResp = str(handler(cmdpath[3:], mc_temp))
+            log.debug ("pollResp: {0}".format(pollResp))
+            message_parts.append(pollResp)
+            message = '\r\n'.join(message_parts)
+        self.send_response(200)
+        # deal with the CORS issue
+        self.send_header('Access-Control-Allow-Origin', server_url)
+        self.end_headers()
+        self.wfile.write(message)
+        return
 
-@app.route('/<path:path>', methods = ['OPTIONS'])
-def do_options(path):
-    resp = flask.Response('true')
-    return resp
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):  
+    """Handle requests in a separate thread."""  
 
-
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', server_url)
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    # deal with the CORS issue
-    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    response.headers.add("Access-Control-Allow-Headers", "X-Requested-With, Content-type, X-CSRF-Token")
-
-mc_list = {}    # list of mc object for each user, indexed by username
-mc_host = '10.2.1.136'
-mc_port = 4711
 
 if __name__ == '__main__':
-    app.debug = True
-    app.run('211.101.17.10', 4715)
+
+    parser = argparse.ArgumentParser(description='mcpi-scratch is a Scratch2 extension helper app to allow Scratch programs to manipulate Minecraft through the Pi protocol')
+    parser.add_argument('-m', action="store", dest="host", help="hostname/IP for the machine running Minecraft. Default is localhost")
+    #parser.add_argument('-p', action="store", dest="port", type=int, help="port for the machine running Minecraft with the Pi protocol enabled. Default is 4711")
+    args = parser.parse_args()
+    log.info(args)
+
+    # nasty stuff to slow down the polling that comes from scratch.
+    # from the docs, sratch is polling at 30 times per second
+    # updating the player pos that often is causing the app to choke.
+    # use these vars to only make the call to MC every pollMax times - 15
+    # maybe change this to a cmd-line switch
+    pollInc = 0
+    pollLimit = 15
+    prevPosStr = ""
+
+    mc_list = {}    # list of mc object for each user, indexed by username
+
+    mc_host = 'localhost'
+    mc_port = 4711
+
+    try:
+        if args.host:
+            mc_host = args.host
+            mc = minecraft.Minecraft.create(mc_host) #仅仅测试服务器是否启动。
+        else:
+            mc = minecraft.Minecraft.create()
+    except:
+        e = sys.exc_info()[0]
+        log.exception('cannot connect to minecraft')
+        traceback.print_exc(file=sys.stdout)
+        sys.exit(0)
+
+    #server = HTTPServer(('localhost', 4715), GetHandler)
+    server = ThreadedHTTPServer(('211.101.17.10', 4715), GetHandler)  
+    log.info('Starting server, use <Ctrl-C> to stop')
+    server.timeout = 0.5;
+    server.serve_forever()
