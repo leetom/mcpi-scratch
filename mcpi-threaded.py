@@ -273,8 +273,10 @@ class GetHandler(BaseHTTPRequestHandler):
             try:
                 #用户是否还在游戏中。
                 mc_list[username].getPlayerEntityId(username)
+                log.debug("用户{}在线".format(username))
                 return "true"
             except:
+                log.debug("用户{}已退出服务器".format(username))
                 del mc_list[username]
                 return "false"
         else:
@@ -325,13 +327,17 @@ class GetHandler(BaseHTTPRequestHandler):
         if(cmdpath[2] == 'checkReady'):
             message = self.checkReady(username)
         else:
-            mc_temp = mc_list[username]
-            handler = cmds[cmdpath[2]]
-            log.debug("mc_list: {}".format(mc_list))
-            pollResp = str(handler(cmdpath[3:], mc_temp))
-            log.debug ("pollResp: {0}".format(pollResp))
-            message_parts.append(pollResp)
-            message = '\r\n'.join(message_parts)
+            if(username in mc_list):      
+                mc_temp = mc_list[username]
+                handler = cmds[cmdpath[2]]
+                log.debug("mc_list: {}".format(mc_list))
+                pollResp = str(handler(cmdpath[3:], mc_temp))
+                log.debug ("pollResp: {0}".format(pollResp))
+                message_parts.append(pollResp)
+                message = '\r\n'.join(message_parts)
+            else:
+                message = "fail"
+
         self.send_response(200)
         # deal with the CORS issue
         self.send_header('Access-Control-Allow-Origin', server_url)
@@ -347,6 +353,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='mcpi-scratch is a Scratch2 extension helper app to allow Scratch programs to manipulate Minecraft through the Pi protocol')
     parser.add_argument('-m', action="store", dest="host", help="hostname/IP for the machine running Minecraft. Default is localhost")
+    parser.add_argument('-l', action="store", dest="serve", help="the ip/hostname the web server is listening")
     #parser.add_argument('-p', action="store", dest="port", type=int, help="port for the machine running Minecraft with the Pi protocol enabled. Default is 4711")
     args = parser.parse_args()
     log.info(args)
@@ -364,6 +371,11 @@ if __name__ == '__main__':
 
     mc_host = 'localhost'
     mc_port = 4711
+    web_host = '211.101.17.10'
+
+    if args.serve:
+        web_host = args.serve
+
 
     try:
         if args.host:
@@ -378,7 +390,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     #server = HTTPServer(('localhost', 4715), GetHandler)
-    server = ThreadedHTTPServer(('211.101.17.10', 4715), GetHandler)  
+    server = ThreadedHTTPServer((web_host, 4715), GetHandler)  
     log.info('Starting server, use <Ctrl-C> to stop')
     server.timeout = 0.5;
     server.serve_forever()
