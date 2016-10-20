@@ -5,7 +5,7 @@ from flask import Response
 import mcpi.minecraft as minecraft
 from mcpi.codecraft import Codecraft
 import mcpi.block as block
-import urlparse, urllib
+import urlparse, urllib, argparse
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -228,6 +228,7 @@ class Handler:
     # getBlock calls getBlockWithData function
     # currently only returns the id and not the data
     # TODO: refactor to return data also
+    @classmethod #类方法
     def getBlock(self, params, mc = None):
         log.info ('getBlock: {0}'.format(params))
         x = int(params[0])
@@ -246,6 +247,7 @@ class Handler:
     # currently only returns the first block in the period between polls
     # requires that polling is enabled to check
     # TODO: refactor to return multiple blocks
+    @classmethod #类方法
     def pollBlockHits(self, params, mc = None):
         log.info ('pollBlockHits: {0}'.format(params))
         blockHits = mc.events.pollBlockHits()
@@ -256,6 +258,7 @@ class Handler:
 
     # from original version for scratch2 (offline)
     # currently unused
+    @classmethod #类方法
     def pollEvents(self, params, mc = None):
         global pollInc, pollLimit, prevPosStr
         pollInc += 1
@@ -319,13 +322,20 @@ cmds = {
     "checkReady": Handler.checkReady,
 }
 
-@app.route('/')
+@app.route('/', methods = ['GET'])
 def index():
     return "hello CodeCraft!\n"
+
+@app.route('/<path:path>', methods = ['OPTIONS'])
+def do_options(path):
+    return "true"
 
 @app.route('/<path:path>', methods=['GET'])
 def catch_all(path):
     cmdpath = path.split('/')
+    if(len(cmdpath) < 2):
+        return "error"
+    # return "-".join(cmdpath)
     username = urlparse.unquote(cmdpath[0])
     global mc
     global mc_list
@@ -344,10 +354,6 @@ def catch_all(path):
             return "fail"
     return 'You want path: {}'.format(cmdpath)
 
-@app.route('/<path:path>', methods = ['OPTIONS'])
-def do_options(path):
-    resp = flask.Response('true')
-    return resp
 
 
 @app.after_request
@@ -357,11 +363,35 @@ def after_request(response):
     # deal with the CORS issue
     response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     response.headers.add("Access-Control-Allow-Headers", "X-Requested-With, Content-type, X-CSRF-Token")
+    return response
 
 mc_list = {}    # list of mc object for each user, indexed by username
-mc_host = '10.2.1.136'
+mc_host = 'localhost'
 mc_port = 4711
+web_host = '211.101.17.10'
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='mcpi-scratch is a Scratch2 extension helper app to allow Scratch programs to manipulate Minecraft through the Pi protocol')
+    parser.add_argument('-m', action="store", dest="host", help="hostname/IP for the machine running Minecraft. Default is localhost")
+    parser.add_argument('-l', action="store", dest="serve", help="the ip/hostname the web server is listening")
+
+    args = parser.parse_args()
+
+    if args.serve:
+        web_host = args.serve
+
+
+    try:
+        if args.host:
+            mc_host = args.host
+            mc = minecraft.Minecraft.create(mc_host) #仅仅测试服务器是否启动。
+        else:
+            mc = minecraft.Minecraft.create()
+    except:
+        e = sys.exc_info()[0]
+        log.exception('cannot connect to minecraft')
+        traceback.print_exc(file=sys.stdout)
+        sys.exit(0)
+
     app.debug = True
-    app.run('211.101.17.10', 4715)
+    app.run(web_host, 4715)
