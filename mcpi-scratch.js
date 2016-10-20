@@ -8,6 +8,8 @@
 
     var request_timeout = 2000;
 
+    var request_frequency = 4; //每秒限制5次请求，防止服务器端负载过高。
+
 
     var server_url = server_host + ":" + server_port;
 
@@ -15,6 +17,25 @@
 
     ext.checkReady = function(){
         return READY;
+    }
+
+    //检查是否请求超过频率限制。
+    ext.checkOverclock = function(count = true){
+        var timestamp = Math.floor((new Date).getTime() / 1000);
+        if(ext._status.freq_time == timestamp){
+            if(count){  //这次调用是否计数
+                ext._status.freq_count++;
+            }
+        }else{
+            ext._status.freq_time = timestamp;
+            ext._status.freq_count = 0;
+        }
+
+        if(ext._status.freq_count > request_frequency){
+            return true;
+        }
+
+        return false;
     }
 
     ext.userName = function(){
@@ -30,7 +51,7 @@
     }
 
     ext.postToChat = function(str) {
-        if(!ext.checkReady()) return;
+        if(!ext.checkReady() || ext.checkOverclock(false)) return;
         console.log(str);
         console.log(document.cookie);
         console.log($('.user-name').text());
@@ -50,7 +71,7 @@
     };
 
     ext.playerPosToChat = function() {
-        if(!ext.checkReady()) return;
+        if(!ext.checkReady() || ext.checkOverclock()) return;
         var cmdUrl = server_url + "/playerPosToChat";
         $.ajax({
             timeout: request_timeout,
@@ -67,7 +88,7 @@
     };
 
     ext.setPlayerPos = function(x, y, z) {
-        if(!ext.checkReady()) return;
+        if(!ext.checkReady() || ext.checkOverclock()) return;
         var cmdUrl = server_url + "/setPlayerPos/" + x + "/" + y + "/" + z;
         $.ajax({
             timeout: request_timeout,
@@ -84,7 +105,7 @@
     };
 
     ext.setBlock = function(x, y, z, blockType, blockData, posType) {
-        if(!ext.checkReady()) return;
+        if(!ext.checkReady() || ext.checkOverclock()) return;
         var cmdUrl = server_url + "/setBlock/" + x + "/" + y + "/" + z + "/" + blockType + "/" + blockData + "/" + posType;
         $.ajax({
             timeout: request_timeout,
@@ -101,7 +122,7 @@
     };
 
     ext.setBlocks = function(x1, y1, z1, x2, y2, z2, blockType, blockData) {
-        if(!ext.checkReady()) return;
+        if(!ext.checkReady() || ext.checkOverclock()) return;
         var cmdUrl = server_url + "/setBlocks/" + x1 + "/" + y1 + "/" + z1 + "/" 
             + x2 + "/" + y2 + "/" + z2 + "/" + blockType + "/" + blockData;
         $.ajax({
@@ -119,7 +140,7 @@
     };
 
     ext.setLine = function(x1, z1, x2, z2, y, blockType, blockData) {
-        if(!ext.checkReady()) return;
+        if(!ext.checkReady() || ext.checkOverclock()) return;
         var cmdUrl = server_url + "/setLine/" + x1 + "/" + z1 + "/" 
             + x2 + "/" + z2 + "/" + y + "/" + blockType + "/" + blockData;
         $.ajax({
@@ -137,7 +158,7 @@
     };
 
     ext.setCircle = function(x, z, r, y, blockType, blockData) {
-        if(!ext.checkReady()) return;
+        if(!ext.checkReady() || ext.checkOverclock()) return;
         var cmdUrl = server_url + "/setCircle/" + x + "/" + z + "/" 
             + r + "/" + y + "/" + blockType + "/" + blockData;
         $.ajax({
@@ -156,7 +177,7 @@
 
     // get one coord (x, y, or z) for playerPos
     ext.getPlayerPos = function(posCoord, callback) {
-        if(!ext.checkReady()) return;
+        if(!ext.checkReady() || ext.checkOverclock()) return;
         var cmdUrl = server_url + "/getPlayerPos/" + posCoord;
         $.ajax({
             timeout: request_timeout,
@@ -176,7 +197,7 @@
 
     // get one coord (x, y, or z) for playerPos
     ext.getBlock = function(x, y, z, posType, callback) {
-        if(!ext.checkReady()) return;
+        if(!ext.checkReady() || ext.checkOverclock()) return;
         var cmdUrl = server_url + "/getBlock/" + x + "/" + y + "/" + z + "/" + posType;
         $.ajax({
             timeout: request_timeout,
@@ -195,7 +216,7 @@
     };
 
     function checkMC_Events() {
-        if(!ext.checkReady()) return;
+        if(!ext.checkReady() || ext.checkOverclock()) return;
         var cmdUrl = server_url + "/pollBlockHit/";
         $.ajax({
             timeout: request_timeout,
@@ -231,11 +252,21 @@
         need_login: {status: 0, msg: '登录之后才能使用'},
         last_ready_time: (new Date).getTime(),  //上次确认ready的时间（毫秒）
         last_check_time: (new Date).getTime(),  //上次到服务器上查询的时间（限制2秒一次）
+        //频率限制
+        frequency: {status: 1, msg: '请求速度过快，请在循环中加入等待时间'},
+        freq_time: Math.floor((new Date).getTime() / 1000),
+        freq_count: 0,
+
     };
+
+
     ext._getStatus = function() {
         console.log('_getStatus');
         if(ext.userName() == ''){
             return ext._status.need_login;
+        }
+        if(ext.checkOverclock(false)){
+            return ext._status.frequency;
         }
         //5s 之内检查过 ready
         if(ext.checkReady() && (new Date).getTime() - ext._status.last_ready_time < 5000) 
@@ -245,7 +276,7 @@
             return ext._status.waiting;
         var cmdUrl = server_url + "/checkReady/";
         $.ajax({
-            timeout: request_timeout,
+            timeout: request_timeout + 1000,    //checkready 等待时间长一点
             type: "GET",
             url: cmdUrl,
             // async: false,   // 需要异步，否则Scratch的SWF会卡住。
