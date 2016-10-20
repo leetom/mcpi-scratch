@@ -3,8 +3,10 @@
     var ext_url = "http://www.codepku.com/scratch/ext/mcpi-scratch.js";
 
     var blockHits = false;
-    var server_host = "http://www.codepku.com";
+    var server_host = "http://mc.codepku.com";
     var server_port = 4715;
+
+    var request_timeout = 2000;
 
 
     var server_url = server_host + ":" + server_port;
@@ -34,6 +36,7 @@
         console.log($('.user-name').text());
         var cmdUrl = server_url + "/postToChat/" + encodeURIComponent(str);
         $.ajax({
+            timeout: request_timeout,
             type: "GET",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
@@ -50,6 +53,7 @@
         if(!ext.checkReady()) return;
         var cmdUrl = server_url + "/playerPosToChat";
         $.ajax({
+            timeout: request_timeout,
             type: "GET",
             url: cmdUrl,
             // dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
@@ -66,6 +70,7 @@
         if(!ext.checkReady()) return;
         var cmdUrl = server_url + "/setPlayerPos/" + x + "/" + y + "/" + z;
         $.ajax({
+            timeout: request_timeout,
             type: "GET",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
@@ -82,6 +87,7 @@
         if(!ext.checkReady()) return;
         var cmdUrl = server_url + "/setBlock/" + x + "/" + y + "/" + z + "/" + blockType + "/" + blockData + "/" + posType;
         $.ajax({
+            timeout: request_timeout,
             type: "GET",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
@@ -99,6 +105,7 @@
         var cmdUrl = server_url + "/setBlocks/" + x1 + "/" + y1 + "/" + z1 + "/" 
             + x2 + "/" + y2 + "/" + z2 + "/" + blockType + "/" + blockData;
         $.ajax({
+            timeout: request_timeout,
             type: "GET",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
@@ -116,6 +123,7 @@
         var cmdUrl = server_url + "/setLine/" + x1 + "/" + z1 + "/" 
             + x2 + "/" + z2 + "/" + y + "/" + blockType + "/" + blockData;
         $.ajax({
+            timeout: request_timeout,
             type: "GET",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
@@ -133,6 +141,7 @@
         var cmdUrl = server_url + "/setCircle/" + x + "/" + z + "/" 
             + r + "/" + y + "/" + blockType + "/" + blockData;
         $.ajax({
+            timeout: request_timeout,
             type: "GET",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
@@ -150,6 +159,7 @@
         if(!ext.checkReady()) return;
         var cmdUrl = server_url + "/getPlayerPos/" + posCoord;
         $.ajax({
+            timeout: request_timeout,
             type: "GET",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
@@ -169,6 +179,7 @@
         if(!ext.checkReady()) return;
         var cmdUrl = server_url + "/getBlock/" + x + "/" + y + "/" + z + "/" + posType;
         $.ajax({
+            timeout: request_timeout,
             type: "GET",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
@@ -187,6 +198,7 @@
         if(!ext.checkReady()) return;
         var cmdUrl = server_url + "/pollBlockHit/";
         $.ajax({
+            timeout: request_timeout,
             type: "GET",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
@@ -225,37 +237,38 @@
         if(ext.userName() == ''){
             return ext._status.need_login;
         }
+        //5s 之内检查过 ready
         if(ext.checkReady() && (new Date).getTime() - ext._status.last_ready_time < 5000) 
             return ext._status.success;
+
         if((new Date).getTime() - ext._status.last_check_time < 2000 )
             return ext._status.waiting;
         var cmdUrl = server_url + "/checkReady/";
-        var returnData = '';
         $.ajax({
+            timeout: request_timeout,
             type: "GET",
             url: cmdUrl,
-            async: false,   //
+            // async: false,   // 需要异步，否则Scratch的SWF会卡住。
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
             success: function(data) {
                 console.log("mc server ready " + data.trim());
                 returnData = data.trim();
+                if(data.trim() == 'true'){
+                    console.log("ready");
+                    READY = true;
+                    ext._status.last_ready_time = (new Date).getTime();
+                }else{
+                    READY = false;
+                }
             },
             error: function(jqxhr, textStatus, error) { // have to change this coz jasonp parse error
+                READY = false;
                 console.log("mc server failed ", error);
             },
         }); 
         ext._status.last_check_time = (new Date).getTime();
-        if(returnData == 'true'){
-            console.log("ready");
-            READY = true;
-            ext._status.last_ready_time = (new Date).getTime();
-            return ext._status.success;
-        }else{
-            console.log("not ready");
-            READY = false;
-            return ext._status.waiting;    // 0 -> error(红色), 1 -> waiting(黄色), 2 -> success(绿色)
-        }
-
+        // 刚检查过了暂时为上次的状态
+        return READY ? ext._status.success : ext._status.waiting;
     };
 
     ext._shutdown = function() {
@@ -289,6 +302,6 @@
     ScratchExtensions.register('编玩Craft-Scratch', descriptor, ext);
 
     checkMC_Events();
-    var poller = setInterval(checkMC_Events, 2000);
+    var poller = setInterval(checkMC_Events, 3000);
 
 })({});
