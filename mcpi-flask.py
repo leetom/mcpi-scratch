@@ -7,6 +7,7 @@ from mcpi.codecraft import Codecraft
 import mcpi.block as block
 import urlparse, urllib, argparse
 import logging
+import os
 
 logging.basicConfig(level=logging.DEBUG)
 #logging.basicConfig(level=logging.INFO)
@@ -369,6 +370,9 @@ mc_list = {}    # list of mc object for each user, indexed by username
 mc_host = 'localhost'
 mc_port = 4711
 web_host = '211.101.17.10'
+
+if 'MCPI_MC_SERVER' in os.environ:
+    mc_host = os.environ['MCPI_MC_SERVER']
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='mcpi-scratch is a Scratch2 extension helper app to allow Scratch programs to manipulate Minecraft through the Pi protocol')
