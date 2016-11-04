@@ -8,6 +8,11 @@ import mcpi.block as block
 import urlparse, urllib, argparse
 import logging
 import os
+import sys
+
+reload(sys)
+
+sys.setdefaultencoding('utf-8')
 
 logging.basicConfig(level=logging.DEBUG)
 #logging.basicConfig(level=logging.INFO)
@@ -302,7 +307,7 @@ class Handler:
             except:
                 log.error(mc_host + str(mc_port))
                 log.error('all users: {}'.format(mc_list))
-                log.error("User has not join mc server:" + username)
+                log.error("User {0} has not join mc server{1} with port {2}:".format(username, mc_host, mc_port))
                 return "false"
 
 
