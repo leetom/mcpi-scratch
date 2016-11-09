@@ -5,6 +5,7 @@ from flask import Response
 import mcpi.minecraft as minecraft
 from mcpi.codecraft import Codecraft
 from mcpi.minecraftstuff import *
+from mcpi.pixeltext import PixelText
 import mcpi.block as block
 import urlparse, urllib, argparse
 import logging
@@ -172,6 +173,31 @@ class Handler:
 
         return ''
 
+    @classmethod
+    def setText(self, params, mc = None):
+        txt = unicode(str(params[0]))
+        log.info('create text ' + txt)
+        x = int(params[1])
+        y = int(params[2])
+        z = int(params[3])
+        blockType = int(params[4])
+        blockData = int(params[5])
+
+        pt = PixelText(txt)
+
+        pixeltext = pt.getPixelList()
+        for ch in xrange(len(txt)):
+            if(txt[ch] != ' '): #跳过空格
+                for yi in xrange(12):
+                    for xi in xrange(12):
+                        pos_x = x + 13 * ch + xi
+                        pos_y = y + (12 - yi)
+                        pos_z = z
+                        if(pixeltext[ch][yi * 12 + xi] == '1'):
+                            mc.setBlock(pos_x, pos_y, pos_z, blockType, blockData)
+                        else:
+                            mc.setBlock(pos_x, pos_y, pos_z, block.AIR.id)
+        return ''
 
     @classmethod #类方法
     def postToChat(self, params, mc = None):
@@ -315,6 +341,7 @@ cmds = {
     "setCircle" : Handler.setCircle,
     "setHCircle" : Handler.setHCircle,
     "setSphere" : Handler.setSphere,
+    "setText" : Handler.setText,
     "cross_domain.xml" : Handler.cross_domain,
     "reset_all" : Handler.reset_all,
     "getPlayerPos" : Handler.getPlayerPos,

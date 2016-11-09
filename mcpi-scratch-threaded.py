@@ -382,5 +382,5 @@ if __name__ == '__main__':
     #server = HTTPServer(('localhost', 4715), GetHandler)
     server = ThreadedHTTPServer(('localhost', 4715), GetHandler)  
     log.info('Starting server, use <Ctrl-C> to stop')
-    server.serve_forever()
     server.timeout = 0.5
+    server.serve_forever()
