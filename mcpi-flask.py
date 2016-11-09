@@ -338,6 +338,7 @@ def do_options(path):
 
 @app.route('/<path:path>', methods=['GET'])
 def catch_all(path):
+    cmdpath = []
     cmdpath = path.split('/')
     if(len(cmdpath) < 2):
         return "error"
@@ -354,6 +355,7 @@ def catch_all(path):
         if(username in mc_list):      
             mc_temp = mc_list[username]
             handler = cmds[cmdpath[1]]
+            log.info("run command for " + username)
             pollResp = str(handler(cmdpath[2:], mc_temp))
             return pollResp
         else:
