@@ -4,12 +4,12 @@ from flask import request
 from flask import Response
 import mcpi.minecraft as minecraft
 from mcpi.codecraft import Codecraft
+from mcpi.minecraftstuff import *
 import mcpi.block as block
 import urlparse, urllib, argparse
 import logging
 import os
 import sys
-
 reload(sys)
 
 sys.setdefaultencoding('utf-8')
@@ -21,6 +21,7 @@ log = logging.getLogger(__name__)
 app = Flask(__name__)
 
 server_url = 'http://www.codepku.com'
+server_url = 'http://platform.codepku.dev'
 
 class Handler:
     def __init__(self, mc):
@@ -112,73 +113,65 @@ class Handler:
         log.info('invoke setLine with params: {} {} {} {} {}'.format(params[0], params[1], params[2], params[3], params[4], params[5]))
         log.debug(params)
         x1 = int(params[0])
-        z1 = int(params[1])
-        x2 = int(params[2])
-        z2 = int(params[3])
-        y = int(params[4])
-        blockType = int(params[5])
-        blockData = int(params[6])
-        points = self.getLinePoints(x1, z1, x2, z2, mc)
-        log.debug(points)
-        for p in points:
-            self.setBlock([p[0], y, p[1], blockType, blockData, ''], mc)
+        y1 = int(params[1])
+        z1 = int(params[2])
+        x2 = int(params[3])
+        y2 = int(params[4])
+        z2 = int(params[5])
+        blockType = int(params[6])
+        blockData = int(params[7])
+        mcDraw = MinecraftDrawing(mc)
+
+        mcDraw.drawLine(x1, y1, z1, x2, y2, z2, blockType, blockData)
         return ''
 
-    # plots a circles point coords using Bresenham's circle algorithm (also known as a midpoint circle algorithm)
-    # based on code from http://rosettacode.org/wiki/Bitmap/Midpoint_circle_algorithm#Python
-    # note: y refers to usual cartesian x,y coords. Not the minecraft coords where y is the veritical axis
-    @classmethod #类方法
-    def getCirclePoints(self, x0, y0, radius, mc = None):
-        log.debug('getCirclePoints with: {} {} {}'.format(x0, y0, radius))
-        points = []
-        x = 0
-        y = radius
-        f = 1 - radius
-        ddf_x = 1
-        ddf_y = -2 * radius
-        x = 0
-        y = radius
-        points.append((x0, y0 + radius))
-        points.append((x0, y0 - radius))
-        points.append((x0 + radius, y0))
-        points.append((x0 - radius, y0))
-
-        while x < y:
-            if f >= 0:
-                y -= 1
-                ddf_y += 2
-                f += ddf_y
-            x += 1
-            ddf_x += 2
-            f += ddf_x
-            points.append((x0 + x, y0 + y))
-            points.append((x0 - x, y0 + y))
-            points.append((x0 + x, y0 - y))
-            points.append((x0 - x, y0 - y))
-            points.append((x0 + y, y0 + x))
-            points.append((x0 - y, y0 + x))
-            points.append((x0 + y, y0 - x))
-            points.append((x0 - y, y0 - x))
-
-        return points
 
     # builds a circle using Bresenham's circle algorithm (also known as a midpoint circle algorithm)
     # plots using setBlock
     @classmethod #类方法
-    def setCircle(self, params, mc = None):
+    def setCircle(self, params, mc = None, H = False):
         log.info('invoke setCircle with params: {} {} {} {} {}'.format(params[0], params[1], params[2], params[3], params[4]))
         log.debug(params)
-        x1 = int(params[0])
-        z1 = int(params[1])
-        r = int(params[2])
-        y = int(params[3])
+        x = int(params[0])
+        y = int(params[1])
+        z = int(params[2])
+        r = int(params[3])
         blockType = int(params[4])
         blockData = int(params[5])
-        points = self.getCirclePoints(x1, z1, r, mc)
-        log.debug(points)
-        for p in points:
-            self.setBlock([p[0], y, p[1], blockType, blockData, ''], mc)
+        log.info("draw circle")
+        mcDraw = MinecraftDrawing(mc)
+
+        if(H):
+            mcDraw.drawHorizontalCircle(x, y, z, r, blockType, blockData)
+        else:
+            mcDraw.drawCircle(x, y, z, r, blockType, blockData)
+
         return ''
+
+    # builds a circle using Bresenham's circle algorithm (also known as a midpoint circle algorithm)
+    # plots using setBlock
+    @classmethod #类方法
+    def setHCircle(self, params, mc = None):
+        self.setCircle(params, mc, True)
+        return ''
+
+    @classmethod #类方法
+    def setSphere(self, params, mc = None):
+        log.info('invoke setCircle with params: {} {} {} {} {}'.format(params[0], params[1], params[2], params[3], params[4]))
+        log.debug(params)
+        x = int(params[0])
+        y = int(params[1])
+        z = int(params[2])
+        r = int(params[3])
+        blockType = int(params[4])
+        blockData = int(params[5])
+        log.info("draw circle")
+        mcDraw = MinecraftDrawing(mc)
+
+        mcDraw.drawSphere(x, y, z, r, blockType, blockData)
+
+        return ''
+
 
     @classmethod #类方法
     def postToChat(self, params, mc = None):
@@ -320,6 +313,8 @@ cmds = {
     "playerPosToChat" : Handler.playerPosToChat,
     "setLine" : Handler.setLine,
     "setCircle" : Handler.setCircle,
+    "setHCircle" : Handler.setHCircle,
+    "setSphere" : Handler.setSphere,
     "cross_domain.xml" : Handler.cross_domain,
     "reset_all" : Handler.reset_all,
     "getPlayerPos" : Handler.getPlayerPos,
@@ -403,7 +398,6 @@ if __name__ == '__main__':
     except:
         e = sys.exc_info()[0]
         log.exception('cannot connect to minecraft')
-        traceback.print_exc(file=sys.stdout)
         sys.exit(0)
 
     app.debug = True
