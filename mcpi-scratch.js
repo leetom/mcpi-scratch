@@ -20,7 +20,8 @@
     }
 
     //检查是否请求超过频率限制。
-    ext.checkOverclock = function(count = true){
+    ext.checkOverclock = function(count){
+        var count = count === undefined ? true : count;
         var timestamp = Math.floor((new Date).getTime() / 1000);
         if(ext._status.freq_time == timestamp){
             if(count){  //这次调用是否计数
@@ -58,7 +59,7 @@
         var cmdUrl = server_url + "/postToChat/" + encodeURIComponent(str);
         $.ajax({
             timeout: request_timeout,
-            type: "GET",
+            type: "POST",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
             success: function(data) {
@@ -75,7 +76,7 @@
         var cmdUrl = server_url + "/playerPosToChat";
         $.ajax({
             timeout: request_timeout,
-            type: "GET",
+            type: "POST",
             url: cmdUrl,
             // dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
             success: function(data) {
@@ -92,7 +93,7 @@
         var cmdUrl = server_url + "/setPlayerPos/" + x + "/" + y + "/" + z;
         $.ajax({
             timeout: request_timeout,
-            type: "GET",
+            type: "POST",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
             success: function(data) {
@@ -109,7 +110,7 @@
         var cmdUrl = server_url + "/setBlock/" + x + "/" + y + "/" + z + "/" + blockType + "/" + blockData + "/" + posType;
         $.ajax({
             timeout: request_timeout,
-            type: "GET",
+            type: "POST",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
             success: function(data) {
@@ -127,7 +128,7 @@
             + x2 + "/" + y2 + "/" + z2 + "/" + blockType + "/" + blockData;
         $.ajax({
             timeout: request_timeout,
-            type: "GET",
+            type: "POST",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
             success: function(data) {
@@ -145,7 +146,7 @@
             + x2 + "/" + z2 + "/" + y + "/" + blockType + "/" + blockData;
         $.ajax({
             timeout: request_timeout,
-            type: "GET",
+            type: "POST",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
             success: function(data) {
@@ -163,7 +164,7 @@
             + r + "/" + y + "/" + blockType + "/" + blockData;
         $.ajax({
             timeout: request_timeout,
-            type: "GET",
+            type: "POST",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
             success: function(data) {
@@ -181,7 +182,7 @@
         var cmdUrl = server_url + "/getPlayerPos/" + posCoord;
         $.ajax({
             timeout: request_timeout,
-            type: "GET",
+            type: "POST",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
             success: function(data) {
@@ -201,7 +202,7 @@
         var cmdUrl = server_url + "/getBlock/" + x + "/" + y + "/" + z + "/" + posType;
         $.ajax({
             timeout: request_timeout,
-            type: "GET",
+            type: "POST",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
             success: function(data) {
@@ -220,7 +221,7 @@
         var cmdUrl = server_url + "/pollBlockHit/";
         $.ajax({
             timeout: request_timeout,
-            type: "GET",
+            type: "POST",
             url: cmdUrl,
             //dataType: "jsonp", // hack for the not origin problem - replace with CORS based solution
             success: function(data) {

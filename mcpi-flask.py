@@ -335,8 +335,12 @@ def index():
 @app.route('/<path:path>', methods = ['OPTIONS'])
 def do_options(path):
     return "true"
+@app.route('/<username>/checkReady/', methods = ['GET'])
+def get_checkReady(username):
+    return Handler.checkReady(username)
 
-@app.route('/<path:path>', methods=['GET'])
+
+@app.route('/<path:path>', methods=['POST'])
 def catch_all(path):
     cmdpath = []
     cmdpath = path.split('/')
@@ -349,17 +353,15 @@ def catch_all(path):
     global mc_host
     global mc_port
     global cmds
-    if(cmdpath[1] == 'checkReady'):
-        return Handler.checkReady(username)
+
+    if(username in mc_list):      
+        mc_temp = mc_list[username]
+        handler = cmds[cmdpath[1]]
+        log.info("run command for " + username)
+        pollResp = str(handler(cmdpath[2:], mc_temp))
+        return pollResp
     else:
-        if(username in mc_list):      
-            mc_temp = mc_list[username]
-            handler = cmds[cmdpath[1]]
-            log.info("run command for " + username)
-            pollResp = str(handler(cmdpath[2:], mc_temp))
-            return pollResp
-        else:
-            return "fail"
+        return "fail"
     return 'You want path: {}'.format(cmdpath)
 
 
