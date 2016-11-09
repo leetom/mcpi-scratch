@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 app = Flask(__name__)
 
 server_url = 'http://www.codepku.com'
-server_url = 'http://platform.codepku.dev'
+# server_url = 'http://platform.codepku.dev'
 
 class Handler:
     def __init__(self, mc):
